@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.1.0] – 2026-05-31
+
+### Changed
+- **Switched from slot-bar injection to a dedicated "Custom Display Slots" section** placed under Reference Model. The previous approach injected radio buttons into the vanilla 8-icon slot row, which on narrow panels caused the custom tabs to wrap off-screen or get visually lost among the standard icons.
+- New section design:
+  - Each slot is a button with both an **icon and a text label** (no more icon-only ambiguity)
+  - Per-slot **accent color dot** + colored icon for at-a-glance identification (SB Worn = blue, MAW Back = orange, MAW Belt = yellow)
+  - Active slot gets a clear highlight (border + background tint + bottom bar)
+  - Whole section has a tinted background and border so it's visually distinct from the vanilla panel
+- Buttons auto-flex-wrap on narrow panels, so all 3 are always visible.
+- Selecting a custom slot now auto-enters Display mode if you're not already in it.
+
+### Fixed
+- Vue-rebuild edge case where the active highlight could fall out of sync — the MutationObserver now also re-syncs the highlight.
+
 ## [4.0.1] – 2026-05-31
 
 ### Changed
