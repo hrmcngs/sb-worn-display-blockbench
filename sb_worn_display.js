@@ -296,31 +296,15 @@
         title: 'SB Worn Display Editor',
         author: 'hrmcngs',
         icon: 'backpack',
-        description: 'Display パネル内に "Custom Slot" 行を追加し、カスタム display key ' +
-            '(SB worn / MAW back / MAW belt) を標準スロットと同じ感覚で 3D 編集できるようにします。',
-        about:
-            'Display パネルの Reference Model の下に Blockbench 標準書式の\n' +
-            '"Custom Slot" 行を追加します:\n\n' +
-            '  - SB Worn   (sophisticatedbackpacks:worn)\n' +
-            '  - MAW Back  (the_four_primitives_and_weapons:back)\n' +
-            '  - MAW Belt  (the_four_primitives_and_weapons:belt)\n\n' +
-            'ボタンをクリックすると標準スロットと同じスライダー (Rotation /\n' +
-            'Translation / Scale) でその key を編集できます。\n\n' +
-            'Tools メニューには数値直接入力用の Edit ダイアログも追加されます。\n\n' +
-            '## インストール (auto-update)\n' +
-            'File → Plugins → "Load Plugin from URL" に以下を貼ると以降\n' +
-            'バージョン更新を自動で取得します:\n' +
-            '  https://raw.githubusercontent.com/hrmcngs/sb-worn-display-blockbench/main/sb_worn_display.js\n\n' +
-            '## ソース / 変更履歴\n' +
-            '  https://github.com/hrmcngs/sb-worn-display-blockbench\n' +
-            '  https://github.com/hrmcngs/sb-worn-display-blockbench/blob/main/CHANGELOG.md',
-        version: '4.2.0',
-        variant: 'both',
+        description: 'Adds a Custom Slot row to the Display panel so you can edit custom item display keys (Sophisticated Backpacks worn, MAW saya back/belt) visually in the 3D viewport, using the same sliders as the vanilla slots.',
+        tags: ['Minecraft: Java Edition', 'Modeling'],
+        version: '4.2.1',
         min_version: '4.8.0',
+        variant: 'both',
         website: 'https://github.com/hrmcngs/sb-worn-display-blockbench',
         repository: 'https://github.com/hrmcngs/sb-worn-display-blockbench',
         bug_tracker: 'https://github.com/hrmcngs/sb-worn-display-blockbench/issues',
-        tags: ['Minecraft: Java Edition', 'Modeling'],
+        creation_date: '2026-05-31',
 
         onload() {
             registerSlotsInDisplayMode();
@@ -347,7 +331,7 @@
                 Blockbench.on('select_project', modeListener);
             } catch (e) { }
 
-            console.log('[' + PLUGIN_ID + '] v4.2.0 loaded — '
+            console.log('[' + PLUGIN_ID + '] v4.2.1 loaded — '
                 + TARGETS.length + ' custom display slots available');
         },
 

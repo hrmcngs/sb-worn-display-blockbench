@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.2.1] – 2026-05-31
+
+### Changed
+- Metadata harmonization for submission to the official JannisX11/blockbench-plugins repository:
+  - `description` rewritten in English (was Japanese-only) for broader discoverability on the in-app plugin store
+  - `about` field removed from the `Plugin.register` manifest — moved to `about.md` per the new-structure (min_version 4.8.0+) convention
+  - `creation_date` added
+- No functional changes — same behavior as v4.2.0.
+
 ## [4.2.0] – 2026-05-31
 
 ### Changed
