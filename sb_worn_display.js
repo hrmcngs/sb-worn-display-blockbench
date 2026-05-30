@@ -286,9 +286,9 @@
             '注意: Blockbench 本体の DOM に介入する実装のため、本体更新で\n' +
             '壊れる可能性があります。その場合 Tools メニューの Edit ダイアログ\n' +
             'を fallback として使ってください。',
-        version: '4.0.0',
+        version: '4.0.1',
         variant: 'both',
-        min_version: '4.0.0',
+        min_version: '4.8.0',
         website: 'https://github.com/hrmcngs/sb-worn-display-blockbench',
         repository: 'https://github.com/hrmcngs/sb-worn-display-blockbench',
         bug_tracker: 'https://github.com/hrmcngs/sb-worn-display-blockbench/issues',

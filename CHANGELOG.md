@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.0.1] – 2026-05-31
+
+### Changed
+- `min_version` bumped to `4.8.0` to align with the recommended new-structure plugin format required for submission to the official Blockbench plugin repository (JannisX11/blockbench-plugins).
+
 ## [4.0.0] – 2026-05-31
 
 ### Added
