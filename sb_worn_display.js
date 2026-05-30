@@ -1,10 +1,10 @@
 /**
  * SB Worn Display Editor — Custom Display Reference Editor for Blockbench
  *
- * Display パネル内、Reference Model の下に "Custom Display Slots" 専用バーを
- * 追加し、カスタム display key を視覚的に明示してクリック一発で編集モードに
- * 入れるようにする。スライダー (Rotation/Translation/Scale) は本体の Display
- * パネルそのままを流用するので、操作感は標準スロットと完全に同じ。
+ * Display パネル内、Reference Model の下に "Custom Slot" 行を追加し、
+ * 本体の Slot 行と同じ見た目 (panel_toolbar_label + tabs_small icon_bar +
+ * label.tool + material-icons) でカスタム display key を選択・編集できる
+ * ようにする。スライダーは本体の Display パネルそのままを流用。
  *
  * カスタム display key:
  *   - sophisticatedbackpacks:worn       (SB の Curios back 装備時)
@@ -14,8 +14,8 @@
  * 仕組み:
  *   1. displayReferenceObjects.slots (= DisplayMode.slots) に key を push
  *      → JSON 保存/読込で必須
- *   2. Display パネルの DOM に "Custom Display Slots" セクションを注入
- *      ─ アイコン + テキストラベル + アクセントカラーで明示
+ *   2. Display パネルの DOM に Blockbench 標準書式の "Custom Slot" 行を注入
+ *      ─ label の class / icon_bar 構造は本体と同一なので追加 CSS 不要
  *      ─ Reference Model の下に出るので折り返しに埋もれない
  *   3. ボタン click 時は DisplayMode.loadHead() を踏み台にカメラ/Reference
  *      バーをセットアップ、その後 DisplayMode.slot をカスタムキーに上書き
@@ -31,31 +31,24 @@
     const TARGETS = [
         {
             key: 'sophisticatedbackpacks:worn',
-            label: 'SB Worn',
-            tooltip: 'Sophisticated Backpacks - Curios back slot (SB worn 背中)',
+            tooltip: 'SB Worn (背中・SB) — sophisticatedbackpacks:worn',
             icon: 'backpack',
-            color: '#5db8ff',
         },
         {
             key: 'the_four_primitives_and_weapons:back',
-            label: 'MAW Back',
-            tooltip: 'MAW saya - Curios back slot (MAW 鞘・背中)',
+            tooltip: 'MAW Saya Back (背中・MAW鞘) — the_four_primitives_and_weapons:back',
             icon: 'straighten',
-            color: '#ff9659',
         },
         {
             key: 'the_four_primitives_and_weapons:belt',
-            label: 'MAW Belt',
-            tooltip: 'MAW saya - Curios belt slot (MAW 鞘・ベルト)',
+            tooltip: 'MAW Saya Belt (ベルト・MAW鞘) — the_four_primitives_and_weapons:belt',
             icon: 'linear_scale',
-            color: '#ffcd5a',
         },
     ];
 
-    const SLOT_BAR_ID = 'display_bar';
     const REF_BAR_ID = 'display_ref_bar';
-    const CUSTOM_PANEL_ID = 'sb-custom-display-panel';
-    const STYLE_ID = 'sb-custom-display-style';
+    const CUSTOM_BAR_ID = 'sb_custom_display_bar';
+    const CUSTOM_LABEL_ID = 'sb_custom_display_label';
     const INJECTED_ATTR = 'data-sb-custom-slot';
 
     const actions = [];
@@ -111,194 +104,84 @@
         try { DisplayMode.updateDisplayBase(); } catch (e) { }
         try { if (DisplayMode.vue && DisplayMode.vue.$forceUpdate) DisplayMode.vue.$forceUpdate(); } catch (e) { }
 
-        // 標準スロット radio をすべて未選択にして、自分の radio を check
-        document.querySelectorAll('input[name="display"]').forEach((r) => { r.checked = false; });
+        // radio の checked 状態を同期 (Blockbench 本体の :checked ハイライトに乗る)
         const radio = document.getElementById(safeId(target.key));
         if (radio) radio.checked = true;
-
-        updateActiveHighlight();
-
-        Blockbench.showQuickMessage(target.label + ' を編集中 (Ctrl+S で保存)', 1800);
     }
 
-    function updateActiveHighlight() {
-        const panel = document.getElementById(CUSTOM_PANEL_ID);
-        if (!panel) return;
-        const current = (typeof DisplayMode !== 'undefined') ? DisplayMode.display_slot : null;
-        panel.querySelectorAll('[' + INJECTED_ATTR + '-key]').forEach((el) => {
-            const key = el.getAttribute(INJECTED_ATTR + '-key');
-            if (key === current) el.classList.add('sb-active');
-            else el.classList.remove('sb-active');
-        });
-    }
+    // ─── DOM injection: standard Blockbench slot-row format ────────────
+    // 本体の Display パネル DisplayModePanel.vue と同じ書式:
+    //   <p class="panel_toolbar_label">…</p>
+    //   <div class="bar tabs_small icon_bar">
+    //     <input class="hidden" type="radio" name="display" id="…">
+    //     <label class="tool" for="…">
+    //       <div class="tooltip">…</div>
+    //       <i class="material-icons">…</i>
+    //     </label>
+    //     …
+    //   </div>
 
-    // ─── style injection ───────────────────────────────────────────────
-
-    function injectStyles() {
-        if (document.getElementById(STYLE_ID)) return;
-        const css = `
-            #${CUSTOM_PANEL_ID} {
-                margin: 4px 0 6px 0;
-                padding: 6px 6px 8px 6px;
-                background: rgba(80, 160, 240, 0.05);
-                border: 1px solid rgba(80, 160, 240, 0.35);
-                border-radius: 4px;
-            }
-            #${CUSTOM_PANEL_ID} .sb-section-label {
-                font-size: 11px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                color: #5db8ff;
-                margin: 0 0 6px 0;
-                padding: 0 2px;
-                display: flex;
-                align-items: center;
-                gap: 4px;
-            }
-            #${CUSTOM_PANEL_ID} .sb-section-label .material-icons {
-                font-size: 14px;
-            }
-            #${CUSTOM_PANEL_ID} .sb-bar {
-                display: flex;
-                gap: 4px;
-                flex-wrap: wrap;
-            }
-            #${CUSTOM_PANEL_ID} .sb-tool {
-                flex: 1 1 70px;
-                min-width: 60px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 6px 4px;
-                min-height: 52px;
-                border-radius: 3px;
-                cursor: pointer;
-                position: relative;
-                background: rgba(0, 0, 0, 0.18);
-                border: 1px solid transparent;
-                color: var(--color-text);
-                transition: background 0.1s ease, border-color 0.1s ease;
-            }
-            #${CUSTOM_PANEL_ID} .sb-tool:hover {
-                background: rgba(80, 160, 240, 0.18);
-                border-color: rgba(80, 160, 240, 0.6);
-            }
-            #${CUSTOM_PANEL_ID} .sb-tool.sb-active {
-                background: rgba(80, 160, 240, 0.30);
-                border-color: #5db8ff;
-                box-shadow: inset 0 -2px 0 0 #5db8ff;
-            }
-            #${CUSTOM_PANEL_ID} .sb-tool .material-icons {
-                font-size: 22px;
-                line-height: 1;
-            }
-            #${CUSTOM_PANEL_ID} .sb-tool .sb-text {
-                font-size: 10px;
-                line-height: 1.1;
-                margin-top: 3px;
-                white-space: nowrap;
-                opacity: 0.9;
-            }
-            #${CUSTOM_PANEL_ID} .sb-tool .sb-dot {
-                position: absolute;
-                top: 3px;
-                right: 3px;
-                width: 6px;
-                height: 6px;
-                border-radius: 50%;
-                box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
-            }
-        `;
-        const style = document.createElement('style');
-        style.id = STYLE_ID;
-        style.textContent = css;
-        document.head.appendChild(style);
-    }
-
-    function removeStyles() {
-        const el = document.getElementById(STYLE_ID);
-        if (el) el.remove();
-    }
-
-    // ─── DOM injection: dedicated "Custom Display Slots" section ───────
-
-    function buildCustomPanel() {
-        const wrapper = document.createElement('div');
-        wrapper.id = CUSTOM_PANEL_ID;
-        wrapper.setAttribute(INJECTED_ATTR, 'panel');
-
+    function buildCustomBar() {
         const label = document.createElement('p');
-        label.className = 'sb-section-label';
-        const labelIcon = document.createElement('i');
-        labelIcon.className = 'material-icons';
-        labelIcon.textContent = 'extension';
-        label.appendChild(labelIcon);
-        label.appendChild(document.createTextNode(' Custom Display Slots'));
-        wrapper.appendChild(label);
+        label.id = CUSTOM_LABEL_ID;
+        label.className = 'panel_toolbar_label';
+        label.setAttribute(INJECTED_ATTR, 'label');
+        label.textContent = 'Custom Slot';
 
         const bar = document.createElement('div');
-        bar.className = 'sb-bar';
+        bar.id = CUSTOM_BAR_ID;
+        bar.className = 'bar tabs_small icon_bar';
+        bar.setAttribute(INJECTED_ATTR, 'bar');
 
         TARGETS.forEach((target) => {
             const id = safeId(target.key);
 
-            // 非表示 radio（標準スロットと name 共有で排他切替）
             const input = document.createElement('input');
             input.type = 'radio';
             input.name = 'display';
             input.id = id;
-            input.style.display = 'none';
+            input.className = 'hidden';
             input.setAttribute(INJECTED_ATTR, target.key);
 
             const tool = document.createElement('label');
-            tool.className = 'sb-tool';
+            tool.className = 'tool';
             tool.htmlFor = id;
             tool.setAttribute(INJECTED_ATTR, target.key);
-            tool.setAttribute(INJECTED_ATTR + '-key', target.key);
-            tool.title = target.tooltip;
 
-            const dot = document.createElement('div');
-            dot.className = 'sb-dot';
-            dot.style.background = target.color;
-            tool.appendChild(dot);
+            const tip = document.createElement('div');
+            tip.className = 'tooltip';
+            tip.textContent = target.tooltip;
+            tool.appendChild(tip);
 
             const icon = document.createElement('i');
             icon.className = 'material-icons';
             icon.textContent = target.icon;
-            icon.style.color = target.color;
             tool.appendChild(icon);
 
-            const textLabel = document.createElement('span');
-            textLabel.className = 'sb-text';
-            textLabel.textContent = target.label;
-            tool.appendChild(textLabel);
-
-            tool.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                loadCustomSlot(target);
-            });
+            tool.addEventListener('click', () => loadCustomSlot(target));
 
             bar.appendChild(input);
             bar.appendChild(tool);
         });
 
-        wrapper.appendChild(bar);
-        return wrapper;
+        return { label, bar };
     }
 
-    function injectCustomPanel() {
-        if (document.getElementById(CUSTOM_PANEL_ID)) {
-            updateActiveHighlight();
-            return;
-        }
+    function injectCustomBar() {
+        if (document.getElementById(CUSTOM_BAR_ID)) return;
         const refBar = document.getElementById(REF_BAR_ID);
         if (!refBar || !refBar.parentNode) return;
-        const panel = buildCustomPanel();
-        // Reference Model バーの直後に挿入
-        refBar.parentNode.insertBefore(panel, refBar.nextSibling);
-        updateActiveHighlight();
+        const { label, bar } = buildCustomBar();
+        // Reference Model の直後に label → bar の順で挿入
+        refBar.parentNode.insertBefore(label, refBar.nextSibling);
+        label.parentNode.insertBefore(bar, label.nextSibling);
+        // 現在の display_slot がカスタムキーなら radio を checked に
+        try {
+            if (typeof DisplayMode !== 'undefined' && DisplayMode.display_slot) {
+                const radio = document.getElementById(safeId(DisplayMode.display_slot));
+                if (radio) radio.checked = true;
+            }
+        } catch (e) { }
     }
 
     function removeInjected() {
@@ -308,13 +191,8 @@
     function setupObserver() {
         if (observer) return;
         observer = new MutationObserver(() => {
-            const refBar = document.getElementById(REF_BAR_ID);
-            if (!refBar) return;
-            if (!document.getElementById(CUSTOM_PANEL_ID)) {
-                injectCustomPanel();
-            } else {
-                updateActiveHighlight();
-            }
+            if (!document.getElementById(REF_BAR_ID)) return;
+            if (!document.getElementById(CUSTOM_BAR_ID)) injectCustomBar();
         });
         observer.observe(document.body, { childList: true, subtree: true });
     }
@@ -386,7 +264,7 @@
                     translation: [result.transX, result.transY, result.transZ],
                     scale: [result.scaleX, result.scaleY, result.scaleZ],
                 });
-                Blockbench.showQuickMessage(target.label + ' を更新しました (Ctrl+S で保存)', 2000);
+                Blockbench.showQuickMessage(target.tooltip.split(' — ')[0] + ' を更新しました (Ctrl+S で保存)', 2000);
                 dlg.hide();
             },
         });
@@ -418,15 +296,14 @@
         title: 'SB Worn Display Editor',
         author: 'hrmcngs',
         icon: 'backpack',
-        description: 'Display パネル内に "Custom Display Slots" セクションを追加し、' +
-            'カスタム display key (SB worn / MAW back / MAW belt) を視覚的に明示して ' +
-            '標準スロットと同じ感覚で 3D 編集できるようにします。',
+        description: 'Display パネル内に "Custom Slot" 行を追加し、カスタム display key ' +
+            '(SB worn / MAW back / MAW belt) を標準スロットと同じ感覚で 3D 編集できるようにします。',
         about:
-            'Display パネルの Reference Model の下に専用セクションを追加します:\n\n' +
-            '  ● SB Worn   (sophisticatedbackpacks:worn)\n' +
-            '  ● MAW Back  (the_four_primitives_and_weapons:back)\n' +
-            '  ● MAW Belt  (the_four_primitives_and_weapons:belt)\n\n' +
-            'アイコン + テキストラベル + 色アクセントで一目で識別できます。\n' +
+            'Display パネルの Reference Model の下に Blockbench 標準書式の\n' +
+            '"Custom Slot" 行を追加します:\n\n' +
+            '  - SB Worn   (sophisticatedbackpacks:worn)\n' +
+            '  - MAW Back  (the_four_primitives_and_weapons:back)\n' +
+            '  - MAW Belt  (the_four_primitives_and_weapons:belt)\n\n' +
             'ボタンをクリックすると標準スロットと同じスライダー (Rotation /\n' +
             'Translation / Scale) でその key を編集できます。\n\n' +
             'Tools メニューには数値直接入力用の Edit ダイアログも追加されます。\n\n' +
@@ -437,7 +314,7 @@
             '## ソース / 変更履歴\n' +
             '  https://github.com/hrmcngs/sb-worn-display-blockbench\n' +
             '  https://github.com/hrmcngs/sb-worn-display-blockbench/blob/main/CHANGELOG.md',
-        version: '4.1.0',
+        version: '4.2.0',
         variant: 'both',
         min_version: '4.8.0',
         website: 'https://github.com/hrmcngs/sb-worn-display-blockbench',
@@ -447,12 +324,11 @@
 
         onload() {
             registerSlotsInDisplayMode();
-            injectStyles();
 
             // Tools メニューに Edit ダイアログ (fallback / 数値入力用)
             TARGETS.forEach((target, idx) => {
                 const aEdit = new Action('custom_disp_edit_' + safeId(target.key), {
-                    name: '[' + (idx + 1) + '] Edit (numbers): ' + target.label,
+                    name: '[' + (idx + 1) + '] Edit (numbers): ' + target.tooltip.split(' — ')[0],
                     description: 'ダイアログで ' + target.key + ' を数値編集',
                     icon: 'tune',
                     category: 'edit',
@@ -463,25 +339,21 @@
             });
 
             setupObserver();
-            injectCustomPanel();
+            injectCustomBar();
 
             try {
-                modeListener = () => setTimeout(() => {
-                    injectStyles();
-                    injectCustomPanel();
-                }, 50);
+                modeListener = () => setTimeout(injectCustomBar, 50);
                 Blockbench.on('select_mode', modeListener);
                 Blockbench.on('select_project', modeListener);
             } catch (e) { }
 
-            console.log('[' + PLUGIN_ID + '] v4.1.0 loaded — '
+            console.log('[' + PLUGIN_ID + '] v4.2.0 loaded — '
                 + TARGETS.length + ' custom display slots available');
         },
 
         onunload() {
             teardownObserver();
             removeInjected();
-            removeStyles();
             unregisterSlotsFromDisplayMode();
             try {
                 if (modeListener) {

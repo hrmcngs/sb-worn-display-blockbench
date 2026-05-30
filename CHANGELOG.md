@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.2.0] – 2026-05-31
+
+### Changed
+- **Design simplified to match Blockbench's native UI conventions.** v4.1.0's tinted background, accent border, color dots, colored icons, and text labels are all removed. The injected section now uses Blockbench's own `panel_toolbar_label` + `bar tabs_small icon_bar` + `label.tool` markup — visually identical in style to the built-in "Slot" and "Reference Model" rows.
+- Section is labeled simply "Custom Slot" using the standard label class.
+- Icons only (no per-button text label) — matches vanilla slot row layout.
+- Active highlight is inherited from Blockbench's native `:checked` CSS for the shared `name="display"` radios — no custom CSS needed.
+
+### Removed
+- Custom `<style>` injection.
+- Per-target `color` field.
+
 ## [4.1.0] – 2026-05-31
 
 ### Changed
