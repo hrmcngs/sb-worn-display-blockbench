@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/plugins/_template/**)",
+      "Read(//private/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/plugins/_template/**)",
+      "Bash(python3 -c ' *)",
+      "Read(//var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/scripts/**)",
+      "Read(//private/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/scripts/**)",
+      "Read(//var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/**)",
+      "Read(//private/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/**)",
+      "Bash(git -C /Users/hiromichi/Documents/github/mods/sb-worn-display-blockbench add sb_worn_display.js CHANGELOG.md)",
+      "Bash(git -C /Users/hiromichi/Documents/github/mods/sb-worn-display-blockbench commit -m ' *)",
+      "Bash(git -C /Users/hiromichi/Documents/github/mods/sb-worn-display-blockbench push origin main)",
+      "Bash(gh pr *)"
+    ],
+    "additionalDirectories": [
+      "/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/plugins/sb_worn_display",
+      "/private/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/plugins/sb_worn_display",
+      "/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3",
+      "/private/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3"
+    ]
+  }
+}
