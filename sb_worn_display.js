@@ -226,7 +226,7 @@
             '  3. Tools → "Save head slot → <key>" で書き戻し\n' +
             '  4. Ctrl+S で JSON 保存',
         version: '3.0.0',
-        variant: 'desktop',
+        variant: 'both',
         min_version: '4.0.0',
         tags: ['Minecraft: Java Edition', 'Modeling'],
 
