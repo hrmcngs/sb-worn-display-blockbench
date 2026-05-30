@@ -1,70 +1,187 @@
 /**
  * Custom Display Reference Editor Plugin for Blockbench
  *
- * 何をするか:
- *   Tools メニューに以下の各カスタム display reference を編集する action を追加:
- *     - sophisticatedbackpacks:worn       (SB の Curios back 装備時)
- *     - the_four_primitives_and_weapons:back  (MAW saya の Curios back 装備時)
- *     - the_four_primitives_and_weapons:belt  (MAW saya の Curios belt 装備時)
+ * Display パネルの Slot 行に直接カスタムキーのタブを追加し、
+ * 標準スロット (head 等) と同じ感覚で 3D 視覚編集できるようにする。
  *
- *   各キーごとに「ダイアログで数値編集」「head スロット経由で視覚編集」両方を提供。
+ * 追加されるカスタム display key:
+ *   - sophisticatedbackpacks:worn       (SB の Curios back 装備時)
+ *   - the_four_primitives_and_weapons:back  (MAW saya の Curios back 装備時)
+ *   - the_four_primitives_and_weapons:belt  (MAW saya の Curios belt 装備時)
  *
- * 視覚編集ワークフロー (Workflow B):
- *   1. Tools → "Load <key> → head slot"
- *   2. 自動で Display モードに切り替わり、head スロットに対象キーの値が入る
- *   3. 3D ビューポートで人形と一緒に視覚編集 (head スロットの sliders を使う)
- *   4. 編集後 Tools → "Save head slot → <key>" で書き戻し
- *   5. Ctrl+S で JSON 保存
+ * 仕組み (DOM 注入ハック):
+ *   Blockbench 本体の DisplayModePanel.vue は slot 行を v-for ではなく
+ *   ベタ書きしているので公式 API では拡張できない。よって
+ *     1. displayReferenceObjects.slots (= DisplayMode.slots) に key を push
+ *        → JSON の保存/読込に必須
+ *     2. MutationObserver で #display_bar が現れる/書き換わるたびに
+ *        <input type="radio">/<label> を注入
+ *     3. ラベル click 時は DisplayMode.loadHead() を実行してカメラと
+ *        Reference Model バーをセットアップしてから slot を上書き
+ *
+ * 注意:
+ *   - Blockbench 本体の更新で内部構造が変わると壊れる可能性あり
+ *   - Tools メニューの Edit ダイアログは数値直接入力用に残してある
  *
  * Author: Backpack Arsenal mod project
- * Compatible with Blockbench 4.x
+ * Compatible with Blockbench 4.x (desktop / web)
  */
 (function () {
     const PLUGIN_ID = 'sb_worn_display';
-    const HEAD_KEY = 'head';
 
-    /**
-     * 編集対象のカスタム display key 一覧。ここに追加すれば自動で
-     * Tools メニューに 3 種類のアクション (Edit / Load / Save) が出る。
-     */
     const TARGETS = [
         {
             key: 'sophisticatedbackpacks:worn',
-            label: 'SB Worn (背中・SB)',
-            description: 'Sophisticated Backpacks Curios back 装備時の表示',
+            label: 'SB Worn',
+            tooltip: 'SB Worn (背中・SB)',
+            icon: 'backpack',
         },
         {
             key: 'the_four_primitives_and_weapons:back',
-            label: 'MAW Saya Back (背中・MAW鞘)',
-            description: 'MAW saya を Curios back に装備した時の表示',
+            label: 'MAW Back',
+            tooltip: 'MAW Saya Back (背中・MAW鞘)',
+            icon: 'arrow_upward',
         },
         {
             key: 'the_four_primitives_and_weapons:belt',
-            label: 'MAW Saya Belt (ベルト・MAW鞘)',
-            description: 'MAW saya を Curios belt に装備した時の表示',
+            label: 'MAW Belt',
+            tooltip: 'MAW Saya Belt (ベルト・MAW鞘)',
+            icon: 'linear_scale',
         },
     ];
 
-    const actions = []; // 登録した Action を unload で消すための一覧
+    const SLOT_BAR_ID = 'display_bar';
+    const INJECTED_ATTR = 'data-sb-custom-slot';
 
-    // ─── helpers ─────────────────────────────────────────────────────────
+    const actions = [];
+    let observer = null;
+    let modeListener = null;
+
+    function safeId(key) {
+        return 'sbcd_' + key.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    }
 
     function getProject() {
         return (typeof Project !== 'undefined') ? Project : null;
     }
 
-    function getDisplayContainer() {
+    // ─── custom slot loader ────────────────────────────────────────────
+    // DisplayMode.loadHead() を踏み台にカメラ/Reference バーを設定し
+    // その後 slot をカスタムキーに差し替える。
+    function loadCustomSlot(target) {
         const p = getProject();
-        if (!p) return null;
+        if (!p) {
+            Blockbench.showQuickMessage('モデルを開いてください', 1500);
+            return;
+        }
+        if (typeof DisplayMode === 'undefined' || !DisplayMode.loadHead) {
+            Blockbench.showQuickMessage('DisplayMode が利用できません', 1500);
+            return;
+        }
+
         if (!p.display_settings) p.display_settings = {};
-        return p.display_settings;
+        if (!p.display_settings[target.key]) {
+            p.display_settings[target.key] = new DisplaySlot(target.key);
+        }
+
+        try {
+            DisplayMode.loadHead();
+        } catch (e) {
+            console.warn('[' + PLUGIN_ID + '] loadHead failed', e);
+        }
+
+        DisplayMode.display_slot = target.key;
+        DisplayMode.slot = p.display_settings[target.key];
+        if (DisplayMode.vue && DisplayMode.vue._data) {
+            DisplayMode.vue._data.slot = p.display_settings[target.key];
+        }
+
+        try { DisplayMode.updateDisplayBase(); } catch (e) { }
+        try { if (DisplayMode.vue && DisplayMode.vue.$forceUpdate) DisplayMode.vue.$forceUpdate(); } catch (e) { }
+
+        const radio = document.getElementById(safeId(target.key));
+        if (radio) radio.checked = true;
     }
 
+    // ─── DOM injection ─────────────────────────────────────────────────
+
+    function buildSlotElements(target) {
+        const id = safeId(target.key);
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'display';
+        input.id = id;
+        input.className = 'hidden';
+        input.setAttribute(INJECTED_ATTR, target.key);
+
+        const label = document.createElement('label');
+        label.className = 'tool';
+        label.htmlFor = id;
+        label.setAttribute(INJECTED_ATTR, target.key);
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = target.tooltip;
+        label.appendChild(tooltip);
+
+        const icon = document.createElement('i');
+        icon.className = 'material-icons';
+        icon.textContent = target.icon;
+        label.appendChild(icon);
+
+        label.addEventListener('click', () => loadCustomSlot(target));
+
+        return { input, label };
+    }
+
+    function injectSlots() {
+        const bar = document.getElementById(SLOT_BAR_ID);
+        if (!bar) return;
+        TARGETS.forEach((target) => {
+            const id = safeId(target.key);
+            if (document.getElementById(id)) return;
+            const { input, label } = buildSlotElements(target);
+            bar.appendChild(input);
+            bar.appendChild(label);
+        });
+        // 現在の display_slot がカスタムキーなら radio を checked に
+        try {
+            if (typeof DisplayMode !== 'undefined' && DisplayMode.display_slot) {
+                const radio = document.getElementById(safeId(DisplayMode.display_slot));
+                if (radio) radio.checked = true;
+            }
+        } catch (e) { }
+    }
+
+    function removeInjectedSlots() {
+        document.querySelectorAll('[' + INJECTED_ATTR + ']').forEach((el) => el.remove());
+    }
+
+    function setupObserver() {
+        if (observer) return;
+        observer = new MutationObserver(() => {
+            const bar = document.getElementById(SLOT_BAR_ID);
+            if (!bar) return;
+            const need = TARGETS.some((t) => !document.getElementById(safeId(t.key)));
+            if (need) injectSlots();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    function teardownObserver() {
+        if (observer) {
+            observer.disconnect();
+            observer = null;
+        }
+    }
+
+    // ─── Edit dialog (Tools menu fallback for typing exact values) ─────
+
     function getSlotValues(key) {
-        const ds = getDisplayContainer();
+        const p = getProject();
         const def = { rotation: [0, 0, 0], translation: [0, 0, 0], scale: [1, 1, 1] };
-        if (!ds) return def;
-        const s = ds[key];
+        if (!p || !p.display_settings) return def;
+        const s = p.display_settings[key];
         if (!s) return def;
         return {
             rotation: (s.rotation || [0, 0, 0]).slice(),
@@ -74,37 +191,30 @@
     }
 
     function setSlotValues(key, v) {
-        const ds = getDisplayContainer();
-        if (!ds) {
-            Blockbench.showQuickMessage('Open a model first', 1500);
+        const p = getProject();
+        if (!p) {
+            Blockbench.showQuickMessage('モデルを開いてください', 1500);
             return false;
         }
-        ds[key] = {
-            rotation: v.rotation.slice(),
-            translation: v.translation.slice(),
-            scale: v.scale.slice(),
-        };
-        const p = getProject();
-        if (p && p.saved !== undefined) p.saved = false;
+        if (!p.display_settings) p.display_settings = {};
+        if (!p.display_settings[key]) p.display_settings[key] = new DisplaySlot(key);
+        const slot = p.display_settings[key];
+        slot.rotation = v.rotation.slice();
+        slot.translation = v.translation.slice();
+        slot.scale = v.scale.slice();
+        if (p.saved !== undefined) p.saved = false;
+        try { DisplayMode.updateDisplayBase(); } catch (e) { }
         return true;
-    }
-
-    function refreshUI() {
-        try {
-            if (typeof DisplayMode !== 'undefined' && DisplayMode.updateDisplay) DisplayMode.updateDisplay();
-            if (typeof main_preview !== 'undefined' && main_preview.render) main_preview.render();
-            if (typeof updateInterface === 'function') updateInterface();
-        } catch (e) { }
     }
 
     function openEditDialog(target) {
         const cur = getSlotValues(target.key);
         const dlg = new Dialog({
-            id: 'edit_' + target.key.replace(/[^a-z0-9]/gi, '_'),
-            title: 'Edit: ' + target.label,
+            id: 'edit_' + safeId(target.key),
+            title: 'Edit: ' + target.tooltip,
             width: 480,
             form: {
-                _info: { type: 'info', text: target.description + '\n\n' + target.key },
+                _info: { type: 'info', text: target.tooltip + '\n\n' + target.key },
                 _div1: '_',
                 rotX: { label: 'Rotation X', type: 'number', value: cur.rotation[0], step: 1 },
                 rotY: { label: 'Rotation Y', type: 'number', value: cur.rotation[1], step: 1 },
@@ -132,157 +242,101 @@
         dlg.show();
     }
 
-    function loadToHead(target) {
-        const ds = getDisplayContainer();
-        if (!ds) {
-            Blockbench.showQuickMessage('モデルを開いてください', 1500);
-            return;
-        }
-        // 連続ロードを避けるため、既存バックアップが他キーのものなら警告
-        if (ds.__head_backup_key__ && ds.__head_backup_key__ !== target.key) {
-            Blockbench.showMessageBox({
-                title: '警告',
-                message: '他のキー (' + ds.__head_backup_key__ + ') の head 編集が未保存です。\n' +
-                    '先に "Save head slot → ' + ds.__head_backup_key__ + '" するか、Reset してください。',
-            });
-            return;
-        }
-        // head の現在値をバックアップ (まだ無ければ)
-        if (!ds.__head_backup__) {
-            ds.__head_backup__ = getSlotValues(HEAD_KEY);
-            ds.__head_backup_key__ = target.key;
-        }
-        const cur = getSlotValues(target.key);
-        setSlotValues(HEAD_KEY, cur);
-        try {
-            if (typeof Modes !== 'undefined' && Modes.options && Modes.options.display) {
-                Modes.options.display.select();
-            }
-            if (typeof DisplayMode !== 'undefined' && DisplayMode.slot) {
-                DisplayMode.slot = HEAD_KEY;
-            }
-        } catch (e) { }
-        refreshUI();
-        Blockbench.showQuickMessage(
-            target.label + ' を head スロットにロード。視覚編集後 "Save head → ' + target.label + '" で書き戻し', 3500);
+    // ─── DisplayMode.slots registration ────────────────────────────────
+    // 保存/読込時に DisplayMode.slots に含まれる key だけが処理されるので
+    // ここで push しておかないと開き直したとき値が消える。
+
+    function registerSlotsInDisplayMode() {
+        if (typeof DisplayMode === 'undefined' || !Array.isArray(DisplayMode.slots)) return;
+        TARGETS.forEach((t) => {
+            if (!DisplayMode.slots.includes(t.key)) DisplayMode.slots.push(t.key);
+        });
     }
 
-    function saveFromHead(target) {
-        const ds = getDisplayContainer();
-        if (!ds) {
-            Blockbench.showQuickMessage('モデルを開いてください', 1500);
-            return;
-        }
-        if (ds.__head_backup_key__ && ds.__head_backup_key__ !== target.key) {
-            Blockbench.showMessageBox({
-                title: 'キーが不一致',
-                message: 'head にロード中のキーは "' + ds.__head_backup_key__ + '" です。\n' +
-                    '対応する "Save head → ..." を使ってください。',
-            });
-            return;
-        }
-        const headNow = getSlotValues(HEAD_KEY);
-        setSlotValues(target.key, headNow);
-        if (ds.__head_backup__) {
-            setSlotValues(HEAD_KEY, ds.__head_backup__);
-            delete ds.__head_backup__;
-            delete ds.__head_backup_key__;
-        }
-        refreshUI();
-        Blockbench.showQuickMessage(
-            target.label + ' に保存 (head 復元済み)。Ctrl+S で永続化', 2500);
+    function unregisterSlotsFromDisplayMode() {
+        if (typeof DisplayMode === 'undefined' || !Array.isArray(DisplayMode.slots)) return;
+        TARGETS.forEach((t) => {
+            const i = DisplayMode.slots.indexOf(t.key);
+            if (i >= 0) DisplayMode.slots.splice(i, 1);
+        });
     }
 
-    function resetHeadBackup() {
-        const ds = getDisplayContainer();
-        if (!ds) return;
-        if (ds.__head_backup__) {
-            setSlotValues(HEAD_KEY, ds.__head_backup__);
-            delete ds.__head_backup__;
-            delete ds.__head_backup_key__;
-            refreshUI();
-            Blockbench.showQuickMessage('head スロットを元の値に復元しました', 2000);
-        } else {
-            Blockbench.showQuickMessage('バックアップ無し', 1500);
-        }
-    }
-
-    // ─── plugin registration ────────────────────────────────────────────
+    // ─── plugin registration ───────────────────────────────────────────
 
     Plugin.register(PLUGIN_ID, {
-        title: 'Custom Display Reference Editor',
-        author: 'Backpack Arsenal',
-        description: 'カスタム display reference (SB worn / MAW back / MAW belt) を ' +
-            '数値ダイアログ or head スロット経由で視覚編集する Tools メニュー追加。',
+        title: 'SB Worn Display Editor',
+        author: 'hrmcngs',
+        icon: 'backpack',
+        description: 'Display パネルの Slot 行にカスタムキー (SB worn / MAW back / MAW belt) ' +
+            'のタブを直接追加し、標準スロットと同じ感覚で 3D 視覚編集できるようにします。',
         about:
-            'Tools メニュー追加内容 (3 キー × 3 アクション = 9 個 + 1 reset):\n' +
-            '  SB Worn:    Edit / Load → head / Save head → SB\n' +
-            '  MAW Back:   Edit / Load → head / Save head → MAW Back\n' +
-            '  MAW Belt:   Edit / Load → head / Save head → MAW Belt\n' +
-            '  Reset head backup (head バックアップを手動復元)\n\n' +
-            '視覚編集フロー:\n' +
-            '  1. Tools → "Load <key> → head slot"\n' +
-            '  2. Display モード + head スロットで 3D 編集\n' +
-            '  3. Tools → "Save head slot → <key>" で書き戻し\n' +
-            '  4. Ctrl+S で JSON 保存',
-        version: '3.0.0',
+            'Display パネルの Slot 行に 3 個のカスタムタブを追加します:\n' +
+            '  - SB Worn   (sophisticatedbackpacks:worn)\n' +
+            '  - MAW Back  (the_four_primitives_and_weapons:back)\n' +
+            '  - MAW Belt  (the_four_primitives_and_weapons:belt)\n\n' +
+            'クリックすると標準スロットと同じく 3D ビューで編集できます。\n' +
+            'Tools メニューには数値直接入力用の Edit ダイアログも追加されます。\n\n' +
+            '## インストール (auto-update)\n' +
+            'File → Plugins → "Load Plugin from URL" に以下を貼ると以降\n' +
+            'バージョン更新を自動で取得します:\n' +
+            '  https://raw.githubusercontent.com/hrmcngs/sb-worn-display-blockbench/main/sb_worn_display.js\n\n' +
+            '## ソース / 変更履歴\n' +
+            '  https://github.com/hrmcngs/sb-worn-display-blockbench\n' +
+            '  https://github.com/hrmcngs/sb-worn-display-blockbench/blob/main/CHANGELOG.md\n\n' +
+            '注意: Blockbench 本体の DOM に介入する実装のため、本体更新で\n' +
+            '壊れる可能性があります。その場合 Tools メニューの Edit ダイアログ\n' +
+            'を fallback として使ってください。',
+        version: '4.0.0',
         variant: 'both',
         min_version: '4.0.0',
+        website: 'https://github.com/hrmcngs/sb-worn-display-blockbench',
+        repository: 'https://github.com/hrmcngs/sb-worn-display-blockbench',
+        bug_tracker: 'https://github.com/hrmcngs/sb-worn-display-blockbench/issues',
         tags: ['Minecraft: Java Edition', 'Modeling'],
 
         onload() {
-            TARGETS.forEach((target, idx) => {
-                const safeId = target.key.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            registerSlotsInDisplayMode();
 
-                const aEdit = new Action('custom_disp_edit_' + safeId, {
-                    name: '[' + (idx + 1) + '] Edit: ' + target.label,
+            // Tools メニューに Edit ダイアログだけ追加 (Load/Save head ワークフローは廃止)
+            TARGETS.forEach((target, idx) => {
+                const aEdit = new Action('custom_disp_edit_' + safeId(target.key), {
+                    name: '[' + (idx + 1) + '] Edit (numbers): ' + target.tooltip,
                     description: 'ダイアログで ' + target.key + ' を数値編集',
                     icon: 'tune',
                     category: 'edit',
                     click() { openEditDialog(target); },
                 });
-                const aLoad = new Action('custom_disp_load_' + safeId, {
-                    name: '[' + (idx + 1) + '] Load → head: ' + target.label,
-                    description: target.key + ' を head スロットにロードして視覚編集モードへ',
-                    icon: 'login',
-                    category: 'edit',
-                    click() { loadToHead(target); },
-                });
-                const aSave = new Action('custom_disp_save_' + safeId, {
-                    name: '[' + (idx + 1) + '] Save head → ' + target.label,
-                    description: 'head の現在値を ' + target.key + ' に書き戻し、head 復元',
-                    icon: 'save',
-                    category: 'edit',
-                    click() { saveFromHead(target); },
-                });
-                try {
-                    MenuBar.addAction(aEdit, 'tools');
-                    MenuBar.addAction(aLoad, 'tools');
-                    MenuBar.addAction(aSave, 'tools');
-                } catch (e) {
-                    console.error('[custom_disp] addAction failed for', target.key, e);
-                }
-                actions.push(aEdit, aLoad, aSave);
+                try { MenuBar.addAction(aEdit, 'tools'); } catch (e) { }
+                actions.push(aEdit);
             });
 
-            const aReset = new Action('custom_disp_reset_head', {
-                name: '[!] Reset head backup',
-                description: 'バックアップから head を強制復元 (緊急用)',
-                icon: 'restart_alt',
-                category: 'edit',
-                click() { resetHeadBackup(); },
-            });
-            try { MenuBar.addAction(aReset, 'tools'); } catch (e) { }
-            actions.push(aReset);
+            setupObserver();
+            // 既に display モードに居る場合の初回注入
+            injectSlots();
 
-            console.log('[custom_disp] v3.0 Loaded — Tools menu に '
-                + (TARGETS.length * 3 + 1) + ' actions 追加');
+            // モード切替時にも明示的に注入を試みる (Observer の保険)
+            try {
+                modeListener = () => setTimeout(injectSlots, 50);
+                Blockbench.on('select_mode', modeListener);
+                Blockbench.on('select_project', modeListener);
+            } catch (e) { }
+
+            console.log('[' + PLUGIN_ID + '] v4.0 loaded — '
+                + TARGETS.length + ' custom slot tabs registered');
         },
 
         onunload() {
-            actions.forEach((a) => {
-                try { a.delete(); } catch (e) { }
-            });
+            teardownObserver();
+            removeInjectedSlots();
+            unregisterSlotsFromDisplayMode();
+            try {
+                if (modeListener) {
+                    Blockbench.removeListener('select_mode', modeListener);
+                    Blockbench.removeListener('select_project', modeListener);
+                }
+            } catch (e) { }
+            modeListener = null;
+            actions.forEach((a) => { try { a.delete(); } catch (e) { } });
             actions.length = 0;
         },
     });

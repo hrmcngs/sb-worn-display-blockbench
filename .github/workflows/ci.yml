@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: syntax & manifest lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: node --check (JS syntax)
+        run: node --check sb_worn_display.js
+
+      - name: validate plugin manifest fields
+        run: |
+          for field in title author version variant; do
+            if ! grep -qE "^\s+${field}:" sb_worn_display.js; then
+              echo "::error::Missing manifest field: $field"
+              exit 1
+            fi
+          done
+          VERSION=$(grep -oE "version:\s*'[^']+'" sb_worn_display.js | head -1 | sed -E "s/version:[[:space:]]*'([^']+)'/\1/")
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$VERSION' is not semver (expected x.y.z)"
+            exit 1
+          fi
+          echo "Plugin version: $VERSION"
+
+  version-bump-check:
+    name: PR must bump version if plugin changed
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ensure version was bumped
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          if ! git diff --name-only "$BASE_SHA" HEAD | grep -q '^sb_worn_display\.js$'; then
+            echo "sb_worn_display.js unchanged — skipping version-bump check."
+            exit 0
+          fi
+          extract() { grep -oE "version:\s*'[^']+'" "$1" | head -1 | sed -E "s/version:[[:space:]]*'([^']+)'/\1/"; }
+          NEW=$(extract sb_worn_display.js)
+          OLD=$(git show "$BASE_SHA:sb_worn_display.js" | grep -oE "version:\s*'[^']+'" | head -1 | sed -E "s/version:[[:space:]]*'([^']+)'/\1/")
+          echo "old=$OLD  new=$NEW"
+          if [ "$NEW" = "$OLD" ]; then
+            echo "::error::sb_worn_display.js changed but version field not bumped (still $OLD). Bump it so Blockbench's URL auto-update mechanism picks it up."
+            exit 1
+          fi

@@ -1,0 +1,105 @@
+name: release
+
+# main の sb_worn_display.js で version が変わるたびに、対応するタグと
+# GitHub Release を自動作成する。タグが既に存在すれば skip するので idempotent。
+#
+# Blockbench は URL インストールされたプラグインを起動のたびに再フェッチして
+# version を比較するため、main にマージするだけで全ユーザに更新が配布される。
+# Releases は人間向けの changelog ビューとリリース資産配布のためのもの。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sb_worn_display.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: extract plugin version
+        id: ver
+        run: |
+          VERSION=$(grep -oE "version:\s*'[^']+'" sb_worn_display.js | head -1 | sed -E "s/version:[[:space:]]*'([^']+)'/\1/")
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract version field from sb_worn_display.js"
+            exit 1
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$VERSION' is not semver (expected x.y.z)"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Plugin version: v$VERSION"
+
+      - name: check if tag already exists
+        id: check
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists — skipping release creation."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: extract changelog section
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (in_section) exit
+              if ($0 ~ "\\[" ver "\\]") { in_section=1; print; next }
+            }
+            in_section { print }
+          ' CHANGELOG.md > /tmp/notes.md || true
+          if [ ! -s /tmp/notes.md ]; then
+            echo "## v$VERSION" > /tmp/notes.md
+            echo "" >> /tmp/notes.md
+            echo "_No CHANGELOG entry found for this version._" >> /tmp/notes.md
+          fi
+          {
+            echo "## Install / auto-update"
+            echo ""
+            echo "Blockbench → **File → Plugins → \"Load Plugin from URL\"** with:"
+            echo ""
+            echo '```'
+            echo "https://raw.githubusercontent.com/${{ github.repository }}/main/sb_worn_display.js"
+            echo '```'
+            echo ""
+            echo "Once installed via URL, Blockbench auto-updates on next launch when this repo's \`version\` field changes."
+            echo ""
+            echo "---"
+            echo ""
+            cat /tmp/notes.md
+          } > /tmp/release_body.md
+
+      - name: create tag
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+
+      - name: create GitHub Release
+        if: steps.check.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file /tmp/release_body.md \
+            sb_worn_display.js
