@@ -1,0 +1,23 @@
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Blockbench plugin (single JS file) リポジトリ向け Dependabot 設定
+#
+# プラグイン本体は外部ライブラリを使わない単一 JS なので、追跡対象は
+# .github/workflows/ に追加された GitHub Actions のバージョンのみ。
+# (将来 npm 化や TypeScript 化したら package-ecosystem: "npm" を追加すること)
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
