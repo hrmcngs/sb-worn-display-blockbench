@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Minimum required: read-only access to the repo for checkout + diff.
+# Explicit declaration silences CodeQL's actions/missing-workflow-permissions.
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: syntax & manifest lint
