@@ -11,7 +11,9 @@
       "Bash(git -C /Users/hiromichi/Documents/github/mods/sb-worn-display-blockbench add sb_worn_display.js CHANGELOG.md)",
       "Bash(git -C /Users/hiromichi/Documents/github/mods/sb-worn-display-blockbench commit -m ' *)",
       "Bash(git -C /Users/hiromichi/Documents/github/mods/sb-worn-display-blockbench push origin main)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(gh -R hrmcngs/sb-worn-display-blockbench api repos/hrmcngs/sb-worn-display-blockbench/code-scanning/alerts --jq '.[] | select\\(.state==\"open\"\\) | \"#\\\\\\(.number\\) \\\\\\(.rule.id\\) — \\\\\\(.most_recent_instance.location.path\\):\\\\\\(.most_recent_instance.location.start_line\\)\"')",
+      "Bash(git -C /Users/hiromichi/Documents/github/mods/sb-worn-display-blockbench add .github/workflows/ci.yml)"
     ],
     "additionalDirectories": [
       "/var/folders/bw/8j13b4_x4mj9c38194kh9fb00000gp/T/bbplugins-XXXXXX.RYF2xFUXA3/plugins/sb_worn_display",
