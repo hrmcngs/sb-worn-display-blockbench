@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.2.3] – 2026-05-31
+
+### Fixed
+- **Reference Model (player figure + reference-model bar) was reset on tab switch.** v4.2.2 skipped `DisplayMode.loadHead()` entirely on `select_project` to avoid the jarring camera reset, but loadHead also re-populates the reference-model bar via `displayReferenceObjects.bar([...])`. Skipping it meant the player/zombie/armor_stand reference figure vanished after every tab switch.
+- New approach: still call loadHead on tab switch (so the reference bar is correctly re-populated for the new project), but **save the camera position/target before, and restore them after** — so the user's viewing angle is preserved.
+
 ## [4.2.2] – 2026-05-31
 
 ### Fixed
