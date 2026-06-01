@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.2.2] – 2026-05-31
+
+### Fixed
+- **Tab switch with a custom slot active no longer leaves the viewport in a broken state** (model floating off-center, reference model gone). On `select_project`, `DisplayMode.slot` and `DisplayMode.vue._data.slot` were still pointing at the *previous* project's slot object, so `updateDisplayBase` read stale data after the tab swap. Now we listen for `select_project` and, if the active slot key is one of ours, silently rebind to the new project's `display_settings[key]` — without forcing display mode or resetting the camera (which would have been jarring on every tab change).
+
+### Changed
+- `loadCustomSlot` now accepts an options object (`silent`, `autoEnterDisplay`, `skipCameraReset`) so it can be reused for the project-switch rebind path without side effects.
+
 ## [4.2.1] – 2026-05-31
 
 ### Changed
