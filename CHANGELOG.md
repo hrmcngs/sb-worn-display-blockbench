@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.6.1] – 2026-06-02
+
+### Added
+- **Import button directly in the "Custom Slot" section header.** The bulk-import dialog is now reachable straight from the Display panel — small download icon (Material `file_download`) next to the "Custom Slot" label, styled the same as Blockbench's native `.tool.head_right` buttons (e.g. the Reset arrow next to Rotation). Click → opens the same dialog as `Tools → Bulk import display values…`.
+
 ## [4.6.0] – 2026-06-02
 
 ### Changed
