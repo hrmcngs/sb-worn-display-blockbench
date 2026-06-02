@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.4.0] – 2026-06-02
+
+### Added
+- **Center Model at Origin** (Tools menu + outliner right-click menu). Computes the bounding box of all elements (cube `from`/`to`, mesh `vertices`, locator `position`), then shifts every element and group `origin` so the bbox center sits at world (0,0,0). Display-mode rotation then orbits around the model's visual center instead of an off-origin point. Wrapped in `Undo.initEdit` / `Undo.finishEdit` so Ctrl+Z reverts. Shows a confirm dialog with the computed offset before applying.
+- **Center View on Selection** (Tools menu + outliner right-click menu). Non-destructive: just sets the active preview's `controls.target` to the bbox center of the current selection (or all elements if nothing is selected). Works in both Edit mode (`main_preview`) and Display mode (`display_preview`).
+- Both new actions are added to the right-click context menu of Cube / Group / Mesh in the Outliner, so they're reachable from the same menu as Copy / Paste / Duplicate / etc.
+
 ## [4.3.0] – 2026-06-02
 
 ### Added
