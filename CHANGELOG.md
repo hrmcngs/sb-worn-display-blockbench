@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.3.0] – 2026-06-02
+
+### Added
+- **Import display values from another model file.** New Tools menu action `Import display values from another model…` opens a file picker (accepts `.json` and `.bbmodel`), then shows a dialog where you choose:
+  - Source slot (any key found in the source file's `display` section, including vanilla slots and other custom keys)
+  - Target slot (one of the plugin's registered custom keys)
+  - **Which fields to overwrite** via three independent checkboxes — Rotation (X/Y/Z), Translation (X/Y/Z), Scale (X/Y/Z). Partial-replace is the point: e.g. tick only Scale to copy just sizing from a sibling model without touching rotation.
+- Source values are shown as a live preview in the dialog before you confirm, so you can sanity-check what's about to be written.
+
 ## [4.2.3] – 2026-05-31
 
 ### Fixed
