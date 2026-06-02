@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.8.0] – 2026-06-02
+
+### Changed
+- **Bulk import now covers vanilla slots too** (`gui`, `head`, `ground`, `firstperson_righthand`, `firstperson_lefthand`, `thirdperson_righthand`, `thirdperson_lefthand`, `fixed`, `on_shelf`, `embedded`) — not just the plugin's three custom keys. The dialog enumerates **every key present in the source file's `display` section** as a target candidate, tagged with `(vanilla)` / `(custom)` / `(other)` so it's obvious at a glance.
+- Keys are listed in Blockbench's canonical slot-row order (vanilla first, then custom, then anything else).
+- All candidates default to checked, so the dialog still works as a "import everything" one-click flow.
+
+### Partial replace remains intact
+- Per-axis 9-checkbox grid from v4.7.0 (Rotation X/Y/Z, Translation X/Y/Z, Scale X/Y/Z) is applied uniformly across the chosen target slots — vanilla and custom alike.
+
 ## [4.7.0] – 2026-06-02
 
 ### Changed
