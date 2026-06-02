@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.7.0] – 2026-06-02
+
+### Changed
+- **True per-axis partial replace.** The bulk-import dialog's 3 channel-level checkboxes (Rotation / Translation / Scale) are split into **9 per-axis checkboxes** (Rotation X / Y / Z, Translation X / Y / Z, Scale X / Y / Z). Each can be toggled independently, so you can copy e.g. only Scale Y from a sibling model while leaving everything else untouched. Combined with the per-slot checkboxes from v4.6.0, the dialog now exposes (3 slots × 9 axes) = up to 27 independent decisions per Confirm.
+- Confirmation message now reports exactly which axes were written per slot, e.g. `sophisticatedbackpacks:worn ← rotation.XZ + scale.Y`.
+
 ## [4.6.1] – 2026-06-02
 
 ### Added
