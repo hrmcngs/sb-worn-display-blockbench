@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.5.0] – 2026-06-02
+
+### Fixed
+- **Ctrl/Cmd+Z now reverts Center Model at Origin.** v4.4.0 called `Undo.initEdit({ elements, group: groups })` — passing an array to the `group` field, which Blockbench's Undo API doesn't recognize, so group-origin diffs were silently dropped and the undo entry was incomplete. Replaced with `{ elements, outliner: true }` which snapshots the full outliner state including all group origins. Standard Undo now correctly reverts the entire centering operation in one step.
+
+### Added
+- **Center Pivot of Groups** (Tools menu + outliner right-click menu). Non-destructive companion to Center Model: sets each group's `origin` to the bounding-box center of its children, leaving the model geometry where it is. Useful when you want rotation to pivot around each group's visual center without moving the model.
+  - If a group is selected, only that group's pivot is centered.
+  - If nothing is selected, all groups are centered.
+  - Wrapped in `Undo.initEdit({ outliner: true })` so Ctrl/Cmd+Z reverts.
+
+### Changed
+- **Center View now delegates to Blockbench's built-in `focus_on_selection`** (Japanese label: "センタービュー") instead of using a custom implementation. The outliner right-click menu now references the native action directly, so behavior is 1:1 with the existing View menu / preview context-menu entry. Removed the v4.4.0 custom `centerViewOnSelection` function and its supporting helpers.
+
 ## [4.4.0] – 2026-06-02
 
 ### Added
