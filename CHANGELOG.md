@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.6.0] – 2026-06-02
+
+### Changed
+- **Import display values is now true bulk-replace.** v4.3.0's dialog only replaced one slot per Confirm — to import three custom slots you had to repeat the whole flow three times. New dialog shows all `TARGETS` keys with their own checkbox (auto-checked when the source file has the same key) plus the shared Rotation / Translation / Scale checkboxes, so one Confirm overwrites every checked slot × every checked field.
+- The custom slot used for source is now always "same key as target" (match by name). If you need to copy across differently-named slots, edit the source file's key first.
+- Tools menu label updated to **"Bulk import display values from another model…"** to reflect the new behavior.
+
+### Fixed
+- **Slider UI not reflecting imported values for the currently-edited slot.** After overwriting, if the active `DisplayMode.display_slot` was one of the replaced ones, the plugin now re-binds `DisplayMode.slot` and `DisplayMode.vue._data.slot` to the freshly-mutated `display_settings[key]` and calls `$forceUpdate()` — so the sliders snap to the new values immediately instead of looking unchanged.
+
 ## [4.5.0] – 2026-06-02
 
 ### Fixed
