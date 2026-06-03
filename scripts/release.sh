@@ -72,10 +72,15 @@ JS_FILE="${PLUGIN_ID}.js"
 CHANGELOG="CHANGELOG.md"
 
 run() {
+  # Execute argv directly — DO NOT eval. eval breaks on any shell-special
+  # character in the args (parens, quotes, etc.), which is fatal for commit
+  # messages that mention things like "scale(-1,-1,1)".
   if (( DRY_RUN )); then
-    printf '  [dry-run] %s\n' "$*"
+    printf '  [dry-run]'
+    for arg in "$@"; do printf ' %q' "$arg"; done
+    printf '\n'
   else
-    eval "$@"
+    "$@"
   fi
 }
 
@@ -132,14 +137,23 @@ fi
 if (( DRY_RUN )); then
   printf '  [dry-run] would prepend:\n%s\n' "$ENTRY" | sed 's/^/    /'
 else
-  # Insert ENTRY just before the first existing "## [" line
+  # Insert ENTRY just before the first existing "## [" line.
+  # awk -v can't carry newline-containing strings cleanly, so feed ENTRY via
+  # a temp file and read it inside awk on the first match.
+  ENTRY_FILE=$(mktemp)
+  printf '%s' "$ENTRY" > "$ENTRY_FILE"
   TMP=$(mktemp)
-  awk -v entry="$ENTRY" '
+  awk -v ef="$ENTRY_FILE" '
+    function emit_entry(   line) {
+      while ((getline line < ef) > 0) print line
+      close(ef)
+    }
     BEGIN { inserted=0 }
-    /^## \[/ && !inserted { print entry; inserted=1 }
+    /^## \[/ && !inserted { emit_entry(); inserted=1 }
     { print }
-    END { if (!inserted) print "\n" entry }
+    END { if (!inserted) { print ""; emit_entry() } }
   ' "$CHANGELOG" > "$TMP" && mv "$TMP" "$CHANGELOG"
+  rm -f "$ENTRY_FILE"
 fi
 
 # ── 3. open editor for polish ───────────────────────────────────────
@@ -153,13 +167,13 @@ fi
 # ── 4. own repo: commit + push ──────────────────────────────────────
 SUBJECT="${MESSAGE:-v${NEW}}"
 echo "[4/7] commit + push to own repo (subject: v${NEW}: ${SUBJECT})"
-run "git add ${JS_FILE} ${CHANGELOG}"
-run "git commit -m 'v${NEW}: ${SUBJECT}'"
+run git add "${JS_FILE}" "${CHANGELOG}"
+run git commit -m "v${NEW}: ${SUBJECT}"
 if (( ! YES && ! DRY_RUN )); then
   echo "  → ready to push to origin/main (release.yml will auto-tag + release)"
   read -r -p "  press Enter to push, Ctrl-C to abort: " _
 fi
-run "git push origin main"
+run git push origin main
 
 # ── 5. fork workdir locate ──────────────────────────────────────────
 if (( SKIP_FORK )); then
@@ -189,7 +203,7 @@ echo "[5/7] fork workdir: ${WORK}"
 
 # ── 6. sync plugin file + plugins.json version, validate ────────────
 echo "[6/7] copy ${JS_FILE} into fork & bump plugins.json"
-run "cp '${REPO_ROOT}/${JS_FILE}' '${WORK}/plugins/${PLUGIN_ID}/${JS_FILE}'"
+run cp "${REPO_ROOT}/${JS_FILE}" "${WORK}/plugins/${PLUGIN_ID}/${JS_FILE}"
 if (( DRY_RUN )); then
   printf '  [dry-run] would rewrite plugins.json: %s → %s for "%s"\n' "$CURRENT" "$NEW" "$PLUGIN_ID"
 else
@@ -216,13 +230,13 @@ fi
 
 # ── 7. fork: commit + push ──────────────────────────────────────────
 echo "[7/7] commit + push to fork branch ${FORK_BRANCH}"
-run "git -C '${WORK}' add plugins.json plugins/${PLUGIN_ID}/${JS_FILE}"
-run "git -C '${WORK}' commit -m 'sb_worn_display: v${NEW} — ${SUBJECT}'"
+run git -C "${WORK}" add plugins.json "plugins/${PLUGIN_ID}/${JS_FILE}"
+run git -C "${WORK}" commit -m "sb_worn_display: v${NEW} — ${SUBJECT}"
 if (( ! YES && ! DRY_RUN )); then
   echo "  → ready to push to fork (PR #914 will auto-update)"
   read -r -p "  press Enter to push, Ctrl-C to abort: " _
 fi
-run "git -C '${WORK}' push origin '${FORK_BRANCH}'"
+run git -C "${WORK}" push origin "${FORK_BRANCH}"
 
 echo
 echo "Done. v${NEW} pushed to both own repo and fork."
