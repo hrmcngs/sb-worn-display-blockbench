@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.9.0] – 2026-06-03
+
+### Added
+- **Per-slot `anchorY` for the player-reference preview.** Each `TARGETS` entry now has an `anchorY: number` field that overrides where the model sits on the player reference in Display mode. `loadHead()` puts the model at head height (~24), which is unnatural when you're editing a backpack or belt slot. Defaults:
+  - `sophisticatedbackpacks:worn`: `y = 18` (chest)
+  - `the_four_primitives_and_weapons:back`: `y = 18` (chest/back center)
+  - `the_four_primitives_and_weapons:belt`: `y = 12` (waist)
+- Applied right after `loadHead()` by writing directly to the global `display_area.position.y` (with `DisplayMode.display_area` / `DisplayMode.display_base` as fallbacks).
+
+### Quick reference for `anchorY` values (32 px-tall Steve)
+- `28` head/face center
+- `24` neck / head bone pivot
+- `18` chest
+- `12` waist / belt
+- `8`  thighs
+- `0`  feet
+
 ## [4.8.0] – 2026-06-02
 
 ### Changed
