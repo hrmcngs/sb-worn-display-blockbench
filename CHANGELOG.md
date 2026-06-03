@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.9.1] – 2026-06-03
+
+### Fixed
+- **Preview now matches in-game appearance.** Added `display_area.rotation.z = π` (180°) alongside the per-slot `anchorY` write. Minecraft's `LivingEntityRenderer` applies `scale(-1, -1, 1)` when drawing entity-attached items, which Blockbench doesn't replicate — so the same display values that look right in-game appeared point-symmetrically wrong (rolled 180°) in the plugin's preview. Z-axis 180° rotation = `(x,y,z) → (-x,-y,z)` = equivalent to that scale flip, restoring 1:1 visual parity.
+
 ## [4.9.0] – 2026-06-03
 
 ### Added
