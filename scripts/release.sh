@@ -125,12 +125,14 @@ if [[ -n "$MESSAGE" ]]; then
 
 ### Changed
 - ${MESSAGE}
+
 "
 else
   ENTRY="## [${NEW}] – ${TODAY}
 
 ### Changed
 - TODO: describe what changed in v${NEW}
+
 "
 fi
 
