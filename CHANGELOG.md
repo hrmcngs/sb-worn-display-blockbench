@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.9.2] – 2026-06-03
+
+### Changed
+- verify release.sh end-to-end after fixing eval/awk bugs (no plugin code change)
 ## [4.9.1] – 2026-06-03
 
 ### Fixed
