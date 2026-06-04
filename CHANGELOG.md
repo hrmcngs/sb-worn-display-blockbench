@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.12.0] – 2026-06-04
+
+### Changed
+- per-target X/Y/Z preview rotation, anchor & scale tuning for backpack slots, drop syncGroup default
+
 ## [4.11.0] – 2026-06-04
 
 ### Added
