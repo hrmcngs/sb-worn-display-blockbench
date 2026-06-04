@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.11.0] – 2026-06-04
+
+### Added
+- `backpack_arsenal:chestplate` target for editing the Backpack-Arsenal custom backpack's chestplate-style worn display. `anchorY = 18` (chest), shares `syncGroup: 'back'` with `sophisticatedbackpacks:worn` and `the_four_primitives_and_weapons:back` so the value editing carries over.
+
 ## [4.10.0] – 2026-06-04
 
 ### Changed

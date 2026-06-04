@@ -1,6 +1,6 @@
 # SB Worn Display Editor
 
-A [Blockbench](https://www.blockbench.net/) plugin that lets you **edit custom display references** (`sophisticatedbackpacks:worn`, `the_four_primitives_and_weapons:back`, `the_four_primitives_and_weapons:belt`) **directly from the Display panel's Slot row**, just like the vanilla `head` / `gui` / `ground` tabs.
+A [Blockbench](https://www.blockbench.net/) plugin that lets you **edit custom display references** (`sophisticatedbackpacks:worn`, `the_four_primitives_and_weapons:back`, `the_four_primitives_and_weapons:belt`, `backpack_arsenal:chestplate`) **directly from the Display panel's Slot row**, just like the vanilla `head` / `gui` / `ground` tabs.
 
 Works on both **desktop Blockbench** and the **web version** (blockbench.net).
 
@@ -11,6 +11,7 @@ Works on both **desktop Blockbench** and the **web version** (blockbench.net).
 | `sophisticatedbackpacks:worn` | SB backpack worn on Curios "back" slot |
 | `the_four_primitives_and_weapons:back` | MAW saya worn on Curios "back" slot |
 | `the_four_primitives_and_weapons:belt` | MAW saya worn on Curios "belt" slot |
+| `backpack_arsenal:chestplate` | Backpack-Arsenal backpack rendered chestplate-style on the body |
 
 ## Why this plugin
 
