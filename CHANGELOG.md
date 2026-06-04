@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.10.0] – 2026-06-04
+
+### Changed
+- sync SB Worn and MAW Back via syncGroup (size / translation / rotation mirror)
+
 ## [4.9.2] – 2026-06-03
 
 ### Changed
