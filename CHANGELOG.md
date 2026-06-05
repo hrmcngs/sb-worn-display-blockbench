@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.12.1] – 2026-06-05
+
+### Changed
+- match BA chestplate preview to in-game by replicating SB BackpackLayerRenderer transform chain (anchor 0,20,4.8 + Y-180 rotation)
+
 ## [4.12.0] – 2026-06-04
 
 ### Changed
