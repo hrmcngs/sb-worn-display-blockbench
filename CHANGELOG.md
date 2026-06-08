@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.12.2] – 2026-06-08
+
+### Changed
+- match MAW saya back/belt preview to in-game by replicating ScabbardCurioRenderer transforms (scale 2/3 + Z-180 + anchor Y=18 back / Y=12 belt)
+
 ## [4.12.1] – 2026-06-05
 
 ### Changed
