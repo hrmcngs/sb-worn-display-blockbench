@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [4.13.0] – 2026-06-09
+
+### Changed
+- add backpack_arsenal:placed target + referenceMode (fixed/placed_block/ground/gui/block) with block-guide preview
+
 ## [4.12.2] – 2026-06-08
 
 ### Changed
